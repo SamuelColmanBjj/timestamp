@@ -1,40 +1,32 @@
 // myApp.js
-var express = require('express');
-var app = express();
+const express = require("express");
+const app = express();
 
-// Root para comprobar que la app corre (opcional)
-app.get('/', (req, res) => {
-  res.send('Timestamp Microservice');
-});
+// Timestamp Microservice
+app.get("/api/:date?", (req, res) => {
+  let { date } = req.params;
 
-// Ruta principal del microservicio
-app.get('/api/timestamp/:date_string?', (req, res) => {
-  let { date_string } = req.params;
+  let parsedDate;
 
-  // Si no hay date_string, usamos la fecha actual
-  if (!date_string) {
-    const now = new Date();
-    return res.json({ unix: now.getTime(), utc: now.toUTCString() });
+  if (!date) {
+    // Sin parámetro → fecha actual
+    parsedDate = new Date();
+  } else if (/^\d+$/.test(date)) {
+    // Solo dígitos → interpretamos como milisegundos
+    parsedDate = new Date(parseInt(date));
+  } else {
+    // Fecha en string ISO
+    parsedDate = new Date(date);
   }
 
-  // Si la cadena es sólo dígitos, interpretarla como unix (ms)
-  // Ej: "1451001600000"
-  if (/^\d+$/.test(date_string)) {
-    const unixMs = Number(date_string);
-    const date = new Date(unixMs);
-    if (date.toString() === 'Invalid Date') {
-      return res.json({ error: 'Invalid Date' });
-    }
-    return res.json({ unix: date.getTime(), utc: date.toUTCString() });
+  if (parsedDate.toString() === "Invalid Date") {
+    return res.json({ error: "Invalid Date" });
   }
 
-  // Intentar parsear como fecha (ISO u otros formatos entendidos por Date)
-  const date = new Date(date_string);
-  if (date.toString() === 'Invalid Date') {
-    return res.json({ error: 'Invalid Date' });
-  }
-
-  return res.json({ unix: date.getTime(), utc: date.toUTCString() });
+  res.json({
+    unix: parsedDate.getTime(),
+    utc: parsedDate.toUTCString()
+  });
 });
 
 module.exports = app;

@@ -1,39 +1,30 @@
-// myApp.js
+const path = require("path");
 const express = require("express");
 const moment = require("moment");
 const app = express();
 
-// Timestamp Microservice route
+// Servir archivos estáticos (CSS, JS, imágenes)
+app.use("/public", express.static(path.join(__dirname, "public")));
+
+// RUTA RAÍZ → servir HTML
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "index.html"));
+});
+
+// Timestamp Microservice
 app.get("/api/:date?", (req, res) => {
-  let { date } = req.params;
-
-  // Si no hay parámetro → fecha actual
-  if (!date) {
-    const now = moment();
-    return res.json({
-      unix: now.valueOf(),        // milisegundos
-      utc: now.toDate().toUTCString()
-    });
-  }
-
+  const { date } = req.params;
   let parsedDate;
 
-  // Solo dígitos → interpretar como Unix timestamp (milisegundos)
-  if (/^\d+$/.test(date)) {
-    parsedDate = moment(Number(date));
-  } else {
-    // Fecha en string ISO
-    parsedDate = moment(date);
-  }
+  if (!date) parsedDate = moment();
+  else if (/^\d+$/.test(date)) parsedDate = moment(Number(date));
+  else parsedDate = moment(date);
 
-  // Fecha inválida
-  if (!parsedDate.isValid()) {
-    return res.json({ error: "Invalid Date" });
-  }
+  if (!parsedDate.isValid()) return res.json({ error: "Invalid Date" });
 
   res.json({
     unix: parsedDate.valueOf(),
-    utc: parsedDate.toDate().toUTCString()
+    utc: parsedDate.toDate().toUTCString(),
   });
 });
 
